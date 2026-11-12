@@ -26,7 +26,93 @@ button.primary{background:var(--accent);color:white}button.soft{background:#eef8
 <canvas id="board" width="300" height="600" aria-label="블록 퍼즐 게임"></canvas>
 <aside class="side">
 <div class="stat"><small>점수</small><strong id="score">0</strong></div>
+<div class="stat"><small>레벨</small><strong id="level">1</strong></div><!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>No Stress Tetris - Relaxing Block Puzzle</title>
+<style>
+:root{--bg:#f5f4ff;--card:#fff;--ink:#30334a;--muted:#737791;--accent:#8278e8;--line:#e8e7f5}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(145deg,#f5f4ff,#eefaf7);font-family:system-ui,-apple-system,"Noto Sans KR",sans-serif;color:var(--ink);padding:20px}
+.wrap{max-width:760px;margin:auto}.hero{text-align:center;padding:12px 0 20px}.hero h1{margin:0;font-size:clamp(26px,5vw,38px);letter-spacing:-1px}.hero p{color:var(--muted);margin:8px 0}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:16px;box-shadow:0 12px 35px #5551}
+.game{display:grid;grid-template-columns:minmax(0,1fr) 150px;gap:14px;align-items:start}
+canvas{width:100%;height:auto;display:block;background:#fbfbff;border-radius:12px;border:1px solid var(--line);touch-action:manipulation}
+.side{display:grid;gap:10px}.stat{background:#f8f7ff;border-radius:13px;padding:11px}.stat small{display:block;color:var(--muted);font-size:12px}.stat strong{font-size:22px}
+button,select{font:inherit;border:0;border-radius:12px;padding:11px 12px;background:#eeeaff;color:#5148ad;font-weight:700;cursor:pointer}
+button.primary{background:var(--accent);color:white}button.soft{background:#eef8f5;color:#387b68}button:active{transform:scale(.98)}
+.controls{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:13px}.controls button{font-size:20px;padding:12px 6px}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.actions button{flex:1;min-width:110px}
+.note{font-size:13px;color:var(--muted);line-height:1.65;margin:14px 2px 0}
+@media(max-width:520px){body{padding:12px}.game{grid-template-columns:minmax(0,1fr) 100px;gap:8px}.panel{padding:10px}.stat{padding:8px}.stat strong{font-size:18px}.side button{font-size:12px;padding:9px 5px}.controls button{padding:10px 4px}.actions button{min-width:90px}}
+</style>
+</head>
+<body><div class="wrap">
+<header class="hero"><h1>🌿 No Stress Tetris</h1><p>Relax, play, and enjoy the challenge!</p></header>
+<section class="panel">
+<div style="display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 14px">
+<label for="startStage"><strong>시작 스테이지</strong></label>
+<select id="startStage" aria-label="시작 스테이지"><option value="1">Stage 1</option><option value="2">Stage 2</option><option value="3">Stage 3</option><option value="4">Stage 4</option><option value="5">Stage 5</option><option value="6">Stage 6</option><option value="7">Stage 7</option><option value="8">Stage 8</option><option value="9">Stage 9</option><option value="10">Stage 10</option></select>
+<span style="font-size:12px;color:var(--muted)">500점마다 다음 스테이지</span>
+</div>
+<div class="game">
+<canvas id="board" width="300" height="600" aria-label="블록 퍼즐 게임"></canvas>
+<aside class="side">
+<div class="stat"><small>점수</small><strong id="score">0</strong></div>
 <div class="stat"><small>레벨</small><strong id="level">1</strong></div>
+<div class="stat"><small>정리한 줄</small><strong id="lines">0</strong></div>
+<canvas id="next" width="120" height="120" aria-label="다음 블록"></canvas>
+<button class="soft" id="pause">⏸ 쉬기</button>
+<button id="undo">↶ 되돌리기</button>
+<button class="primary" id="clear">✨ 선택한 줄 삭제</button>
+<button id="continue">💚 이어하기</button>
+<button id="restart">새 게임</button>
+</aside></div>
+<div class="controls">
+<button id="left" aria-label="왼쪽">◀</button><button id="rotate" aria-label="회전">↻</button><button id="right" aria-label="오른쪽">▶</button>
+<button id="down" aria-label="아래">▼</button><button id="drop" aria-label="내리기">⤓</button><button id="save" aria-label="저장">💾</button>
+</div>
+<p class="note">← → 이동 · ↑ 회전 · ↓ 천천히 내리기 · Space 빠르게 내리기<br>
+<strong>원하는 줄 삭제:</strong> 게임판에서 블록이 쌓인 줄을 누른 다음 ‘선택한 줄 삭제’를 누르세요. 줄이 꽉 차지 않아도 삭제할 수 있고, 위쪽 블록은 한 칸 내려옵니다. 완성된 줄은 기존처럼 자동 삭제됩니다.</p>
+</section>
+</div>
+<script>
+(()=>{
+const cvs=document.getElementById('board'),ctx=cvs.getContext('2d'),ncv=document.getElementById('next'),nctx=ncv.getContext('2d');
+const W=10,H=20,S=30;const colors=['#9b91f2','#72c9b2','#f5c879','#ef9eb7','#8bc6ed','#b7d98a','#c6a0e8'];
+const shapes=[
+[[1,1,1,1]],[[1,0,0],[1,1,1]],[[0,0,1],[1,1,1]],[[1,1],[1,1]],
+[[0,1,1],[1,1,0]],[[0,1,0],[1,1,1]],[[1,1,0],[0,1,1]]
+];
+let grid,cur,next,score,lines,level,paused,over,dropTimer,last=0,acc=0,snapshot=null,selectedRow=-1,startStage=1;
+const $=id=>document.getElementById(id);
+function piece(){let i=Math.floor(Math.random()*shapes.length);return {shape:shapes[i].map(r=>r.slice()),color:colors[i],x:3,y:0}}
+function setStageFromScore(){level=Math.min(10,startStage+Math.floor(score/500));dropTimer=Math.max(120,700-(level-1)*55)}
+function reset(){startStage=Number($('startStage').value)||1;grid=Array.from({length:H},()=>Array(W).fill(null));cur=piece();next=piece();score=lines=0;level=startStage;paused=over=false;selectedRow=-1;setStageFromScore();update();draw();saveState();persist()}
+function update(){$('score').textContent=score;$('lines').textContent=lines;$('level').textContent=level;$('pause').textContent=paused?'▶ 계속':'⏸ 쉬기'}
+function drawCell(c,x,y,size=S){if(!c)return;ctx.fillStyle=c;ctx.fillRect(x*size+1,y*size+1,size-2,size-2);ctx.fillStyle='#ffffff55';ctx.fillRect(x*size+3,y*size+3,size-6,3);ctx.strokeStyle='#ffffff70';ctx.strokeRect(x*size+2,y*size+2,size-4,size-4)}
+function draw(){ctx.clearRect(0,0,cvs.width,cvs.height);ctx.fillStyle='#f9f9ff';ctx.fillRect(0,0,cvs.width,cvs.height);ctx.strokeStyle='#efeff8';for(let x=0;x<=W;x++){ctx.beginPath();ctx.moveTo(x*S,0);ctx.lineTo(x*S,H*S);ctx.stroke()}for(let y=0;y<=H;y++){ctx.beginPath();ctx.moveTo(0,y*S);ctx.lineTo(W*S,y*S);ctx.stroke()}
+grid.forEach((r,y)=>r.forEach((c,x)=>drawCell(c,x,y)));if(selectedRow>=0){ctx.fillStyle='#8278e855';ctx.fillRect(0,selectedRow*S,W*S,S);ctx.strokeStyle='#655bd8';ctx.lineWidth=2;ctx.strokeRect(1,selectedRow*S+1,W*S-2,S-2);ctx.lineWidth=1;}if(cur&&!over){cur.shape.forEach((r,y)=>r.forEach((v,x)=>v&&drawCell(cur.color,cur.x+x,cur.y+y)));}nctx.clearRect(0,0,120,120);nctx.fillStyle='#fbfbff';nctx.fillRect(0,0,120,120);let sh=next.shape,ox=(4-sh[0].length)/2,oy=(4-sh.length)/2;sh.forEach((r,y)=>r.forEach((v,x)=>{if(v){nctx.fillStyle=next.color;nctx.fillRect((ox+x)*24+2,(oy+y)*24+2,20,20)}}));if(over){ctx.fillStyle='#30334acc';ctx.fillRect(0,245,300,110);ctx.fillStyle='white';ctx.textAlign='center';ctx.font='bold 22px sans-serif';ctx.fillText('괜찮아요! 계속할 수 있어요',150,290);ctx.font='15px sans-serif';ctx.fillText('이어하기 또는 새 게임을 선택하세요',150,322)}}
+function valid(p,dx=0,dy=0,shape=p.shape){return shape.every((r,y)=>r.every((v,x)=>!v||(p.x+x+dx>=0&&p.x+x+dx<W&&p.y+y+dy<H&&(p.y+y+dy<0||!grid[p.y+y+dy][p.x+x+dx]))))}
+function saveState(){snapshot={grid:grid.map(r=>r.slice()),cur:JSON.parse(JSON.stringify(cur)),next:JSON.parse(JSON.stringify(next)),score,lines,level,startStage}}
+function restore(){if(!snapshot)return;let s=snapshot;grid=s.grid.map(r=>r.slice());cur=JSON.parse(JSON.stringify(s.cur));next=JSON.parse(JSON.stringify(s.next));score=s.score;lines=s.lines;level=s.level;startStage=s.startStage||1;$('startStage').value=String(startStage);setStageFromScore();over=false;paused=false;update();draw()}
+function rotate(){let sh=cur.shape[0].map((_,i)=>cur.shape.map(r=>r[i]).reverse());if(valid(cur,0,0,sh)){saveState();cur.shape=sh;draw()}}
+function move(dx,dy){if(over||paused)return;if(valid(cur,dx,dy)){cur.x+=dx;cur.y+=dy;draw();return true}if(dy===1)lock();return false}
+function lock(){saveState();cur.shape.forEach((r,y)=>r.forEach((v,x)=>{if(v&&cur.y+y>=0)grid[cur.y+y][cur.x+x]=cur.color}));let cleared=0;for(let y=H-1;y>=0;){if(grid[y].every(Boolean)){grid.splice(y,1);grid.unshift(Array(W).fill(null));cleared++}else y--}if(cleared){lines+=cleared;score+=cleared*cleared*100}setStageFromScore();cur=next;next=piece();if(!valid(cur)){over=true;paused=true}update();draw();persist()}
+function hardDrop(){if(over||paused)return;saveState();while(valid(cur,0,1))cur.y++;lock()}
+function clearLines(){if(over||paused||selectedRow<0)return; if(!grid[selectedRow].some(Boolean)){return} saveState();grid.splice(selectedRow,1);grid.unshift(Array(W).fill(null));selectedRow=-1;lines++;score+=100;setStageFromScore();update();draw();persist()}
+function selectRow(e){const rect=cvs.getBoundingClientRect();const y=Math.floor((e.clientY-rect.top)*H/rect.height);if(y<0||y>=H)return;selectedRow=grid[y].some(Boolean)?y:-1;draw()}
+cvs.addEventListener('click',selectRow);
+function persist(){try{localStorage.setItem('relaxBlocks',JSON.stringify({grid,cur,next,score,lines,level,startStage}))}catch(e){}}
+function load(){try{let s=JSON.parse(localStorage.getItem('relaxBlocks'));if(s&&s.grid){grid=s.grid;cur=s.cur;next=s.next;score=s.score;lines=s.lines;level=s.level;startStage=s.startStage||1;$('startStage').value=String(startStage);setStageFromScore();over=false;paused=false;update();draw();return true}}catch(e){}return false}
+$('left').onclick=()=>move(-1,0);$('right').onclick=()=>move(1,0);$('down').onclick=()=>move(0,1);$('rotate').onclick=rotate;$('drop').onclick=hardDrop;$('clear').onclick=clearLines;$('undo').onclick=restore;$('pause').onclick=()=>{paused=!paused;update()};$('restart').onclick=reset;$('startStage').onchange=()=>reset();$('continue').onclick=()=>{over=false;paused=false;update();draw()};$('save').onclick=()=>{persist();$('save').textContent='저장됨 ✓';setTimeout(()=>$('save').textContent='💾',1200)};
+document.addEventListener('keydown',e=>{if(['ArrowLeft','ArrowRight','ArrowDown','ArrowUp',' '].includes(e.key))e.preventDefault();if(e.key==='ArrowLeft')move(-1,0);if(e.key==='ArrowRight')move(1,0);if(e.key==='ArrowDown')move(0,1);if(e.key==='ArrowUp')rotate();if(e.key===' ')hardDrop();if(e.key==='Escape'){$('pause').click()}});
+let touchX=null;cvs.addEventListener('touchstart',e=>{touchX=e.touches[0].clientX},{passive:true});cvs.addEventListener('touchend',e=>{if(touchX===null)return;let d=e.changedTouches[0].clientX-touchX;if(Math.abs(d)>25)move(d>0?1:-1,0);else rotate();touchX=null},{passive:true});
+function loop(t){let dt=t-last;last=t;if(!paused&&!over){acc+=dt;if(acc>dropTimer){move(0,1);acc=0}}requestAnimationFrame(loop)}
+reset();load();requestAnimationFrame(loop);
+})();
+</script>
+</body></html>
 <div class="stat"><small>정리한 줄</small><strong id="lines">0</strong></div>
 <canvas id="next" width="120" height="120" aria-label="다음 블록"></canvas>
 <button class="soft" id="pause">⏸ 쉬기</button>
