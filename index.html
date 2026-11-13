@@ -332,6 +332,7 @@ b.addEventListener(ev,stopHold)
 )
 });
 
+
 const downBtn=$('down');
 let downDelay=null,downTimer=null;
 
@@ -344,15 +345,19 @@ downDelay=downTimer=null;
 downBtn.addEventListener('pointerdown',e=>{
 e.preventDefault();
 stopDown();
+downBtn.setPointerCapture(e.pointerId);
 move(0,1);
 downDelay=setTimeout(()=>{
-downTimer=setInterval(()=>move(0,1),45);
+downTimer=setInterval(()=>{
+if(!move(0,1))stopDown();
+},45);
 },120);
 });
 
-['pointerup','pointerleave','pointercancel','lostpointercapture'].forEach(ev=>
-downBtn.addEventListener(ev,stopDown)
-);
+['pointerup','pointercancel','lostpointercapture'].forEach(ev=>{
+downBtn.addEventListener(ev,stopDown);
+});
+
 $('rotate').onclick=rotate;
 $('drop').onclick=hardDrop;
 $('clear').onclick=clearLines;
@@ -389,7 +394,11 @@ if(e.key==='Escape'){$('pause').click()}
 document.addEventListener('keyup',e=>{
 if(e.key==='ArrowLeft'||e.key==='ArrowRight')stopKey()
 });
-window.addEventListener('blur',()=>{stopHold();stopKey()});
+window.addEventListener('blur',()=>{
+stopHold();
+stopKey();
+stopDown();
+});
 
 let touchX=null;
 cvs.addEventListener('touchstart',e=>{touchX=e.touches[0].clientX},{passive:true});
