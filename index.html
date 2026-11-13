@@ -379,6 +379,11 @@ keyDelay=keyTimer=null
 }
 document.addEventListener('keydown',e=>{
 if(['ArrowLeft','ArrowRight','ArrowDown','ArrowUp',' '].includes(e.key))e.preventDefault();
+  
+if(e.key==='ArrowDown'){
+move(0,1);
+return;
+}
 if(e.repeat)return;
 if(e.key==='ArrowLeft'||e.key==='ArrowRight'){
 stopKey();
