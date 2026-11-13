@@ -332,7 +332,27 @@ b.addEventListener(ev,stopHold)
 )
 });
 
-$('down').onclick=()=>move(0,1);
+const downBtn=$('down');
+let downDelay=null,downTimer=null;
+
+function stopDown(){
+clearTimeout(downDelay);
+clearInterval(downTimer);
+downDelay=downTimer=null;
+}
+
+downBtn.addEventListener('pointerdown',e=>{
+e.preventDefault();
+stopDown();
+move(0,1);
+downDelay=setTimeout(()=>{
+downTimer=setInterval(()=>move(0,1),45);
+},120);
+});
+
+['pointerup','pointerleave','pointercancel','lostpointercapture'].forEach(ev=>
+downBtn.addEventListener(ev,stopDown)
+);
 $('rotate').onclick=rotate;
 $('drop').onclick=hardDrop;
 $('clear').onclick=clearLines;
