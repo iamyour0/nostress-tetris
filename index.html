@@ -371,39 +371,64 @@ persist();$('save').textContent='저장됨 ✓';
 setTimeout(()=>$('save').textContent='💾',1200)
 };
 
-/* 키보드 방향키 길게 누르기 */
+
+/* 키보드 방향키 연속 이동 */
 let keyDelay=null,keyTimer=null;
+let downKeyDelay=null,downKeyTimer=null;
+
 function stopKey(){
-clearTimeout(keyDelay);clearInterval(keyTimer);
-keyDelay=keyTimer=null
+clearTimeout(keyDelay);
+clearInterval(keyTimer);
+keyDelay=keyTimer=null;
 }
+
+function stopDownKey(){
+clearTimeout(downKeyDelay);
+clearInterval(downKeyTimer);
+downKeyDelay=downKeyTimer=null;
+}
+
 document.addEventListener('keydown',e=>{
 if(['ArrowLeft','ArrowRight','ArrowDown','ArrowUp',' '].includes(e.key))e.preventDefault();
-  
+
 if(e.key==='ArrowDown'){
+if(e.repeat)return;
+stopDownKey();
 move(0,1);
+downKeyDelay=setTimeout(()=>{
+downKeyTimer=setInterval(()=>move(0,1),45);
+},120);
 return;
 }
+
 if(e.repeat)return;
+
 if(e.key==='ArrowLeft'||e.key==='ArrowRight'){
 stopKey();
 let dx=e.key==='ArrowLeft'?-1:1;
 move(dx,0);
-keyDelay=setTimeout(()=>keyTimer=setInterval(()=>move(dx,0),65),180)
+keyDelay=setTimeout(()=>{
+keyTimer=setInterval(()=>move(dx,0),65)
+},180);
 }
-if(e.key==='ArrowDown')move(0,1);
+
 if(e.key==='ArrowUp')rotate();
 if(e.key===' ')hardDrop();
-if(e.key==='Escape'){$('pause').click()}
+if(e.key==='Escape')$('pause').click();
 });
+
 document.addEventListener('keyup',e=>{
-if(e.key==='ArrowLeft'||e.key==='ArrowRight')stopKey()
+if(e.key==='ArrowLeft'||e.key==='ArrowRight')stopKey();
+if(e.key==='ArrowDown')stopDownKey();
 });
+
 window.addEventListener('blur',()=>{
 stopHold();
 stopKey();
 stopDown();
+stopDownKey();
 });
+
 
 let touchX=null;
 cvs.addEventListener('touchstart',e=>{touchX=e.touches[0].clientX},{passive:true});
